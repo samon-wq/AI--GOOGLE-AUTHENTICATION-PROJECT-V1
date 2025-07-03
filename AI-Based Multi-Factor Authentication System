@@ -1,0 +1,126 @@
+ Project: SecureAuth.AI
+Goal: Password + Face Recognition + Email OTP Login
+✅ Step 1: Project Setup
+📁 Folder Structure
+bash
+Copy
+Edit
+secureauth_ai/
+├── app/
+│   ├── static/
+│   ├── templates/
+│   ├── face_model/         # Stores face encodings
+│   ├── app.py              # Main Flask file
+│   ├── auth.py             # Handles face & OTP logic
+│   └── database.py         # User database logic
+├── utils/
+│   ├── otp_generator.py    # OTP generation
+│   └── mail_sender.py      # Send OTP email
+├── requirements.txt
+└── README.md
+🧱 Step 2: Install Required Libraries
+bash
+Copy
+Edit
+pip install flask opencv-python face_recognition flask-mail bcrypt
+In requirements.txt:
+
+nginx
+Copy
+Edit
+flask
+flask-mail
+opencv-python
+face_recognition
+bcrypt
+🧠 Step 3: Face Encoding Logic (AI Part)
+📄 auth.py
+python
+Copy
+Edit
+import face_recognition
+import cv2
+import os
+import numpy as np
+
+def encode_face(image_path):
+    image = face_recognition.load_image_file(image_path)
+    encoding = face_recognition.face_encodings(image)
+    return encoding[0] if encoding else None
+
+def compare_faces(known_encoding, unknown_image):
+    unknown = face_recognition.load_image_file(unknown_image)
+    unknown_encoding = face_recognition.face_encodings(unknown)
+    if not unknown_encoding:
+        return False
+    return face_recognition.compare_faces([known_encoding], unknown_encoding[0])[0]
+🔐 Step 4: OTP Logic
+📄 utils/otp_generator.py
+python
+Copy
+Edit
+import random
+
+def generate_otp():
+    return str(random.randint(100000, 999999))
+📄 utils/mail_sender.py
+python
+Copy
+Edit
+from flask_mail import Mail, Message
+
+mail = Mail()
+
+def send_otp_email(app, recipient, otp):
+    with app.app_context():
+        msg = Message("Your SecureAuth OTP", sender="yourmail@example.com", recipients=[recipient])
+        msg.body = f"Your OTP is {otp}. It will expire in 5 minutes."
+        mail.send(msg)
+🌐 Step 5: Flask App Setup
+📄 app/app.py
+python
+Copy
+Edit
+from flask import Flask, render_template, request, redirect, session
+from utils.otp_generator import generate_otp
+from utils.mail_sender import send_otp_email, mail
+
+app = Flask(__name__)
+app.secret_key = "securekey123"
+
+# Configure Flask-Mail
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'yourmail@gmail.com'
+app.config['MAIL_PASSWORD'] = 'yourpassword'
+mail.init_app(app)
+
+@app.route('/')
+def home():
+    return render_template('login.html')
+
+@app.route('/login', methods=['POST'])
+def login():
+    # Get email, password, image, send OTP...
+    # Face and password check logic goes here
+    return redirect('/otp')
+
+@app.route('/otp', methods=['GET', 'POST'])
+def otp():
+    # Check OTP here
+    return "Login Successful"
+
+if __name__ == '__main__':
+    app.run(debug=True)
+🎨 Step 6: Frontend Pages
+📄 templates/login.html
+html
+Copy
+Edit
+<form method="POST" action="/login" enctype="multipart/form-data">
+    <input type="email" name="email" placeholder="Email" required />
+    <input type="password" name="password" placeholder="Password" required />
+    <input type="file" name="face_image" accept="image/*" required />
+    <button type="submit">Login</button>
+</form>
